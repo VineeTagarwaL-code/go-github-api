@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -77,25 +77,28 @@ func mapContributionLevel(level string) int {
 
 func GithubHandler(r *gin.Context) {
 	name := r.Param("name")
-	year := r.Query("year")
 
-	if name == "" || year == "" {
+	if name == "" {
 		r.JSON(http.StatusBadRequest, gin.H{
 			"error": "Year parameter is required",
 		})
 		return
 	}
 
-	yearInt, err := strconv.Atoi(year)
-	if err != nil {
-		r.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid year parameter",
-		})
-		return
-	}
+	currentTime := time.Now()
 
-	from := fmt.Sprintf("%d-01-01T00:00:00Z", yearInt)
-	to := fmt.Sprintf("%d-12-31T23:59:59Z", yearInt)
+	// Set the 'from' date to the same date last year
+	from := time.Date(currentTime.Year()-1, currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
+
+	// Set the 'to' date to the present date and time
+	to := currentTime
+
+	// Format the dates in the desired format
+	fromStr := from.Format("2006-01-02T15:04:05Z")
+	toStr := to.Format("2006-01-02T15:04:05Z")
+
+	fmt.Printf("From: %s\n", fromStr)
+	fmt.Printf("To: %s\n", toStr)
 
 	query := `query ($username: String!, $from: DateTime!, $to: DateTime!) {
 		user(login: $username) {

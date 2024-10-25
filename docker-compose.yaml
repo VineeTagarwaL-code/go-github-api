@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  github-api:
+    image: vineetagarwal2004/github-api
+    container_name: github-api-container
+    ports:
+      - "3005:3000"
+    env_file:
+      - .env
+    restart: unless-stopped

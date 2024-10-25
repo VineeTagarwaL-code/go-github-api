@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 const githubEndpoint = "https://api.github.com/graphql"
@@ -40,9 +38,9 @@ type ContributionResponse struct {
 }
 
 type ApiResponse struct {
-	Day     string `json:"day"`
-	Commits int    `json:"commits"`
-	Level   string `json:"level"`
+	Date  string `json:"date"`
+	Count int    `json:"count"`
+	Level int    `json:"level"`
 }
 
 type ErrorResponse struct {
@@ -62,13 +60,25 @@ type ErrorResponse struct {
 	} `json:"errors"`
 }
 
+func mapContributionLevel(level string) int {
+	switch level {
+	case "FIRST_QUARTILE":
+		return 1
+	case "SECOND_QUARTILE":
+		return 2
+	case "THIRD_QUARTILE":
+		return 3
+	case "FOURTH_QUARTILE":
+		return 4
+	default:
+		return 0 // Use 0 for "NONE" or unknown levels
+	}
+}
+
 func GithubHandler(r *gin.Context) {
 	name := r.Param("name")
 	year := r.Query("year")
-	err := godotenv.Load()
-	if err != nil {
-		log.Print("Error loading .env")
-	}
+
 	if name == "" || year == "" {
 		r.JSON(http.StatusBadRequest, gin.H{
 			"error": "Year parameter is required",
@@ -143,9 +153,9 @@ func GithubHandler(r *gin.Context) {
 	for _, week := range contriResponse.Data.User.ContributionsCollection.ContributionCalendar.Weeks {
 		for _, day := range week.ContributionDays {
 			apiResponse = append(apiResponse, ApiResponse{
-				Day:     day.Date,
-				Commits: day.ContributionCount,
-				Level:   day.ContributionLevel,
+				Date:  day.Date,
+				Count: day.ContributionCount,
+				Level: mapContributionLevel(day.ContributionLevel),
 			})
 		}
 	}
